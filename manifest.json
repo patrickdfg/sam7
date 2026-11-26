@@ -1,0 +1,18 @@
+{
+  "name": "삼국지: 칠성용옥전 (2.5D HD 도트 RPG)",
+  "short_name": "칠성용옥전",
+  "description": "유비·관우·장비·제갈량과 함께 천하에 흩어진 7개의 용옥을 모아 신룡을 소환하는 2.5D 도트 RPG",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070a12",
+  "theme_color": "#e5b84b",
+  "icons": [
+    {
+      "src": "assets/item_dragonball.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

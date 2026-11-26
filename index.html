@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>삼국지: 칠성용옥전 — 2.5D HD 도트 RPG (v4.0 Ultimate)</title>
+  <meta name="description" content="유비·관우·장비·제갈량과 함께 5개 지역에 흩어진 7개의 칠성용옥을 모아 황금 신룡을 소환하는 2.5D 도트 RPG">
+  <meta name="theme-color" content="#e5b84b">
+
+  <!-- SNS 공유용 Open Graph 메타태그 -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="삼국지: 칠성용옥전 — 2.5D HD 도트 RPG">
+  <meta property="og:description" content="7개의 용옥을 모아 황금 신룡을 소환하라! 100% 픽셀 아트 & 16비트 동양풍 RPG">
+  <meta property="og:image" content="assets/og_banner.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <!-- PWA 매니페스트 & 용옥 파비콘 -->
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/jpeg" href="assets/item_dragonball.jpg">
+  <link rel="apple-touch-icon" href="assets/item_dragonball.jpg">
+
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="game-shell">
+  <canvas id="gameCanvas" width="540" height="720"></canvas>
+  <div id="toast-banner"></div>
+  <div id="debug-bar"></div>
+
+  <!-- 26장 에셋 프리로더 -->
+  <div id="preloader">
+    <div class="loader-title">삼국지: 칠성용옥전</div>
+    <div class="loader-track"><div class="loader-fill" id="loader-fill"></div></div>
+    <div class="loader-sub" id="loader-sub">전설의 두루마리를 펼치는 중... (0 / 26)</div>
+  </div>
+
+  <!-- 스테이지 암전 & 배너 -->
+  <div id="stage-fade"></div>
+  <div id="stage-banner">
+    <div class="banner-sub" id="banner-sub">CHAPTER I</div>
+    <div class="banner-main" id="banner-main">제1막: 탁군 마을</div>
+  </div>
+
+  <!-- 필살기 합공 컷인 -->
+  <div id="cutin-overlay">
+    <div class="cutin-band">
+      <div class="cutin-faces" id="cutin-faces"></div>
+      <div class="cutin-label" id="cutin-label">🐉 도원결의 삼위일체!!</div>
+    </div>
+  </div>
+
+  <!-- 타이틀 화면 -->
+  <div id="title-screen">
+    <img class="title-bg-art" src="assets/og_banner.jpg" onerror="this.style.display='none'" alt="">
+    <div class="title-badge">2.5D HD PIXEL RPG • ULTIMATE v4.0</div>
+    <h1 class="game-title">삼국지: 칠성용옥전</h1>
+    <p class="game-sub">탁군에서 낙양 황궁까지 5대 전장을 누비며<br>7개의 용옥을 모아 황금 신룡을 소환하라!</p>
+    <button class="menu-btn" onclick="startNewGame()">⚔️ 새로운 여정 시작</button>
+    <button class="menu-btn" id="btn-continue" onclick="openSaveModal('load')" style="display:none;">📜 이어하기 (3슬롯)</button>
+    <button class="menu-btn" onclick="openAchievements()">🏆 업적 &amp; 엔딩 도감</button>
+    <button class="menu-btn" onclick="openSettings()">⚙️ 환경설정</button>
+    <div class="version-tag">v4.0 Ultimate • 5 Chapters • PWA App • Pixel Font</div>
+  </div>
+
+  <!-- 상단 HUD -->
+  <div class="hud-top">
+    <div class="rpg-panel hud-left">
+      <div class="hud-row-1">
+        <span class="stage-label" id="hud-stage">제1막: 탁군 마을</span>
+        <span class="stats-mini" id="hud-stats">Lv.1 | 💰100G</span>
+      </div>
+      <div class="quest-goal" id="hud-goal">목표: 칠성용옥을 모아라</div>
+      <div class="balls-row" id="hud-balls"></div>
+      <div class="party-strip" id="hud-party"></div>
+    </div>
+    <div class="hud-actions">
+      <button class="icon-btn" onclick="openRadar()">📡 레이더</button>
+      <button class="icon-btn" onclick="openInventory()">🎒 가방</button>
+      <button class="icon-btn" onclick="openQuestLog('main')">📜 일지</button>
+      <button class="icon-btn" onclick="openSaveModal('manage')">💾 저장</button>
+      <button class="icon-btn" onclick="openAchievements()">🏆 업적</button>
+      <button class="icon-btn" onclick="openSettings()">⚙️ 설정</button>
+    </div>
+  </div>
+
+  <!-- 하단 대화창 -->
+  <div id="dialogue-wrap" onclick="closeDialogue()">
+    <div class="portrait-box"><img id="dlg-portrait" src="" alt="초상화"></div>
+    <div class="rpg-panel dialogue-box">
+      <div class="speaker-name" id="dlg-speaker">유비</div>
+      <div class="dialogue-msg" id="dlg-text"></div>
+      <div class="blink-next">▼ 터치 / Space</div>
+    </div>
+  </div>
+
+  <!-- 3슬롯 저장/불러오기 모달 -->
+  <div id="save-modal" class="modal-overlay">
+    <div class="rpg-panel modal-card">
+      <div class="modal-header">
+        <span class="modal-title" id="save-modal-title">💾 3슬롯 저장 / 불러오기</span>
+        <button class="close-x" onclick="closeModals()">✕</button>
+      </div>
+      <div class="item-list" id="save-slots-list"></div>
+    </div>
+  </div>
+
+  <!-- 용옥 탐지기 (드래곤 레이더) 모달 -->
+  <div id="radar-modal" class="modal-overlay">
+    <div class="rpg-panel modal-card">
+      <div class="modal-header">
+        <span class="modal-title">📡 칠성용옥 탐지기 (드래곤 레이더)</span>
+        <button class="close-x" onclick="closeModals()">✕</button>
+      </div>
+      <div class="radar-wrap">
+        <canvas id="radarCanvas" width="240" height="240"></canvas>
+        <div class="radar-info" id="radar-info"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 대장간 상점 모달 -->
+  <div id="shop-modal" class="modal-overlay">
+    <div class="rpg-panel modal-card">
+      <div class="modal-header">
+        <span class="modal-title">⚒️ 삼국지 대장간 &amp; 잡화 상점</span>
+        <button class="close-x" onclick="closeModals()">✕</button>
+      </div>
+      <div class="shop-banner">
+        <img src="assets/shop_banner.jpg" onerror="this.src='assets/shop_banner.png'" alt="대장간">
+        <span class="shop-gold-tag" id="shop-gold">보유 금화: 100 G</span>
+      </div>
+      <div class="item-list" id="shop-list"></div>
+    </div>
+  </div>
+
+  <!-- 인벤토리 & 장비 모달 -->
+  <div id="inv-modal" class="modal-overlay">
+    <div class="rpg-panel modal-card">
+      <div class="modal-header">
+        <span class="modal-title">🎒 영웅 정보 &amp; 장비 가방</span>
+        <button class="close-x" onclick="closeModals()">✕</button>
+      </div>
+      <div class="stat-grid" id="inv-stats"></div>
+      <div class="item-list" id="inv-list"></div>
+    </div>
+  </div>
+
+  <!-- 퀘스트 일지 모달 (메인 + 서브 퀘스트 탭) -->
+  <div id="quest-modal" class="modal-overlay">
+    <div class="rpg-panel modal-card">
+      <div class="modal-header">
+        <span class="modal-title">📜 임무 일지</span>
+        <button class="close-x" onclick="closeModals()">✕</button>
+      </div>
+      <div class="tab-bar">
+        <button class="tab-btn active" id="qtab-main" onclick="openQuestLog('main')">🟠 칠성용옥 (메인)</button>
+        <button class="tab-btn" id="qtab-sub" onclick="openQuestLog('sub')">📋 의뢰 (서브 3종)</button>
+      </div>
+      <div class="item-list" id="quest-list"></div>
+    </div>
+  </div>
+
+  <!-- 업적 & 엔딩 도감 모달 -->
+  <div id="ach-modal" class="modal-overlay">
+    <div class="rpg-panel modal-card">
+      <div class="modal-header">
+        <span class="modal-title">🏆 영웅 업적 &amp; 엔딩 도감</span>
+        <button class="close-x" onclick="closeModals()">✕</button>
+      </div>
+      <div class="item-list" id="ach-list"></div>
+    </div>
+  </div>
+
+  <!-- 환경설정 모달 -->
+  <div id="settings-modal" class="modal-overlay">
+    <div class="rpg-panel modal-card">
+      <div class="modal-header">
+        <span class="modal-title">⚙️ 환경설정 &amp; 개발자 도구</span>
+        <button class="close-x" onclick="closeModals()">✕</button>
+      </div>
+      <div class="setting-row">
+        <span>🎵 배경음 (BGM) 볼륨</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="range" id="vol-bgm" min="0" max="100" value="70" oninput="updateVolume()">
+          <span id="vol-bgm-txt" style="width:36px;text-align:right;">70%</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <span>🔊 효과음 (SFX) 볼륨</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="range" id="vol-sfx" min="0" max="100" value="85" oninput="updateVolume()">
+          <span id="vol-sfx-txt" style="width:36px;text-align:right;">85%</span>
+        </div>
+      </div>
+      <div class="setting-row">
+        <span>🛠️ 충돌 박스 디버그 (F2)</span>
+        <button class="btn-small" id="btn-debug-toggle" onclick="toggleDebugMode()">OFF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 16비트 전용 배경 전투 모달 -->
+  <div id="battle-modal" class="modal-overlay">
+    <div class="rpg-panel modal-card" id="battle-card" style="text-align:center;">
+      <h3 style="color:#f87171; font-size:16px;" id="b-title">⚔️ 적장 출현!</h3>
+      <div class="charge-alert" id="charge-alert"></div>
+      <div class="battle-stage">
+        <img class="battle-stage-bg" id="b-stage-bg" src="" alt="전투 배경">
+        <div class="battle-actors">
+          <div class="actor-slot" id="b-player-wrap">
+            <img class="actor-sprite" id="b-player-sprite" src="" alt="유비">
+            <div class="slash-fx" id="slash-player"></div>
+            <div class="actor-name-tag" style="color:#86efac;">유비군</div>
+          </div>
+          <div class="actor-slot" id="b-enemy-wrap">
+            <img class="actor-sprite" id="b-enemy-sprite" src="" alt="적장">
+            <div class="slash-fx" id="slash-enemy"></div>
+            <div class="actor-name-tag" style="color:#fca5a5;" id="b-enemy-label">적장</div>
+          </div>
+        </div>
+      </div>
+      <div class="status-badges" id="b-status"></div>
+      <div style="text-align:left; font-size:11.5px;">
+        적 체력: <span id="b-ehp-txt">100/100</span>
+        <div class="hp-track"><div class="hp-fill hp-enemy" id="b-ehp-bar" style="width:100%"></div></div>
+        아군 체력: <span id="b-php-txt">135/135</span>
+        <div class="hp-track"><div class="hp-fill hp-player" id="b-php-bar" style="width:100%"></div></div>
+        아군 기력(MP): <span id="b-pmp-txt">55/55</span>
+        <div class="hp-track"><div class="hp-fill mp-fill" id="b-pmp-bar" style="width:100%"></div></div>
+      </div>
+      <p id="b-log" style="font-size:12px; color:#e2e8f0; min-height:34px; margin:5px 0;"></p>
+      <div class="cmd-grid">
+        <button class="cmd-btn" onclick="battleTurn('attack')">🗡️ 쌍고검 공격</button>
+        <button class="cmd-btn" id="btn-b-skill" onclick="battleTurn('skill')">🔥 필살기</button>
+        <button class="cmd-btn" id="btn-b-herb" onclick="battleTurn('herb')">🍵 탕약</button>
+        <button class="cmd-btn" id="btn-b-thunder" onclick="battleTurn('thunder')">⚡ 천둥부적</button>
+        <button class="cmd-btn" style="grid-column: span 2;" onclick="battleTurn('guard')">🛡️ 철벽 방어 (필살기 방어 &amp; MP+14)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 제갈량 지략 퀴즈 모달 (4성구) -->
+  <div id="quiz-modal" class="modal-overlay">
+    <div class="rpg-panel modal-card" style="text-align:center;">
+      <h3 style="color:#fde047; margin-bottom:10px;">🪶 제갈량의 지략 시험 (4성구)</h3>
+      <p style="font-size:13.5px; line-height:1.6; margin-bottom:14px; color:#f1f5f9;">
+        "유비가 천하의 인재 제갈량을 얻기 위해<br>초가집을 세 번이나 직접 찾아간 고사성어는?"
+      </p>
+      <div class="cmd-grid">
+        <button class="cmd-btn" onclick="answerQuiz(false)">① 도원결의</button>
+        <button class="cmd-btn" onclick="answerQuiz(true)">② 삼고초려</button>
+        <button class="cmd-btn" onclick="answerQuiz(false)">③ 사면초가</button>
+        <button class="cmd-btn" onclick="answerQuiz(false)">④ 읍참마속</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 황금 신룡 강림 엔딩 컷신 -->
+  <div id="ending-screen">
+    <div class="ending-art">
+      <img id="ending-img" src="" alt="황금 신룡 강림">
+      <div class="ending-overlay">
+        <div class="ending-title" id="ending-title">🐉 황금 신룡 강림!</div>
+        <div class="ending-text" id="ending-text"></div>
+        <div class="wish-btns" id="wish-btns">
+          <button class="cmd-btn" onclick="chooseWish('peace')">🕊️ 소원 1: 천하에 태평성대를 열어주소서 (진 엔딩)</button>
+          <button class="cmd-btn" onclick="chooseWish('power')">⚔️ 소원 2: 천하무쌍의 힘을 주소서 (공격+50)</button>
+          <button class="cmd-btn" onclick="chooseWish('wealth')">💰 소원 3: 만석의 부를 주소서 (9999G)</button>
+        </div>
+        <div class="wish-btns" id="ending-after-btns" style="display:none;">
+          <button class="cmd-btn" onclick="continueAfterEnding()">🗺️ 특전을 가지고 계속 탐험하기</button>
+          <button class="cmd-btn" onclick="location.reload()">🏠 타이틀 화면으로</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 모바일/PC 보조 조작패드 -->
+<div class="controls-footer">
+  <div class="dpad">
+    <div></div><button class="d-btn" onpointerdown="startMove(0,-1)" onpointerup="stopMove()" onpointerleave="stopMove()">▲</button><div></div>
+    <button class="d-btn" onpointerdown="startMove(-1,0)" onpointerup="stopMove()" onpointerleave="stopMove()">◀</button>
+    <button class="d-btn" onclick="interact()">●</button>
+    <button class="d-btn" onpointerdown="startMove(1,0)" onpointerup="stopMove()" onpointerleave="stopMove()">▶</button>
+    <div></div><button class="d-btn" onpointerdown="startMove(0,1)" onpointerup="stopMove()" onpointerleave="stopMove()">▼</button><div></div>
+  </div>
+  <div class="help-text">
+    <b>이동:</b> 바닥 클릭/터치 • 방향키 • WASD<br>
+    <b>조사:</b> Space/Enter/● | <b>디버그:</b> F2<br>
+    <b>저장:</b> 💾 3슬롯 지원 &amp; PWA 앱 설치 가능
+  </div>
+</div>
+
+<script src="js/audio.js"></script>
+<script src="js/data.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
