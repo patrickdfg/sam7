@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>삼국지: 칠성용옥전 — 2.5D HD 도트 RPG (v4.1 Ultimate)</title>
+  <title>삼국지: 칠성용옥전 — 2.5D HD 도트 RPG (v4.2 Ultimate)</title>
   <meta name="description" content="유비·관우·장비·제갈량과 함께 5개 지역에 흩어진 7개의 칠성용옥을 모아 황금 신룡을 소환하는 2.5D 도트 RPG">
   <meta name="theme-color" content="#e5b84b">
 
@@ -24,7 +24,7 @@
 <body>
 
 <div id="game-shell">
-  <canvas id="gameCanvas" width="540" height="720"></canvas>
+  <div id="pc-viewport"><canvas id="gameCanvas" width="1920" height="1080"></canvas>
   <div id="toast-banner"></div>
   <div id="debug-bar"></div>
 
@@ -53,14 +53,14 @@
   <!-- 타이틀 화면 -->
   <div id="title-screen">
     <img class="title-bg-art" src="assets/og_banner.jpg" onerror="this.style.display='none'" alt="">
-    <div class="title-badge">2.5D HD PIXEL RPG • ULTIMATE v4.1 • 4-DIR</div>
+    <div class="title-badge">2.5D HD PIXEL RPG • ULTIMATE v4.2 • 1920x1080 PC</div>
     <h1 class="game-title">삼국지: 칠성용옥전</h1>
     <p class="game-sub">탁군에서 낙양 황궁까지 5대 전장을 누비며<br>7개의 용옥을 모아 황금 신룡을 소환하라!</p>
     <button class="menu-btn" onclick="startNewGame()">⚔️ 새로운 여정 시작</button>
     <button class="menu-btn" id="btn-continue" onclick="openSaveModal('load')" style="display:none;">📜 이어하기 (3슬롯)</button>
     <button class="menu-btn" onclick="openAchievements()">🏆 업적 &amp; 엔딩 도감</button>
     <button class="menu-btn" onclick="openSettings()">⚙️ 환경설정</button>
-    <div class="version-tag">v4.1 Ultimate • 5 Chapters • PWA App • Pixel Font</div>
+    <div class="version-tag">v4.2 Ultimate • 5 Chapters • PWA App • Pixel Font</div>
   </div>
 
   <!-- 상단 HUD -->
@@ -275,6 +275,41 @@
       </div>
     </div>
   </div>
+</div>
+
+  <!-- PC 1920x1080 와이드 전용 우측 사이드 패널 -->
+  <aside class="pc-side-panel" id="pc-side-panel">
+    <div class="rpg-panel pc-brand-box">
+      <div class="pc-brand-title">삼국지: 칠성용옥전</div>
+      <div class="pc-brand-sub" id="pc-hud-stage">제1막: 탁군 마을</div>
+    </div>
+
+    <div class="rpg-panel pc-status-card">
+      <div class="hud-row-1">
+        <span style="font-size:12px;color:#93c5fd;">영웅 상태</span>
+        <span class="stats-mini" id="pc-hud-stats" style="font-size:13px;">Lv.1 | 💰100G</span>
+      </div>
+      <div class="quest-goal" id="pc-hud-goal" style="font-size:12.5px;">목표: 칠성용옥을 모아라</div>
+      <div class="balls-row" id="pc-hud-balls"></div>
+      <div class="party-strip" id="pc-hud-party" style="margin-top:8px;font-size:11.5px;"></div>
+    </div>
+
+    <div class="pc-menu-grid">
+      <button class="pc-menu-btn" onclick="openRadar()">📡 용옥 레이더</button>
+      <button class="pc-menu-btn" onclick="openInventory()">🎒 장비·가방</button>
+      <button class="pc-menu-btn" onclick="openQuestLog('main')">📜 임무 일지</button>
+      <button class="pc-menu-btn" onclick="openSaveModal('manage')">💾 3슬롯 저장</button>
+      <button class="pc-menu-btn" onclick="openAchievements()">🏆 업적 도감</button>
+      <button class="pc-menu-btn" onclick="openSettings()">⚙️ 환경설정</button>
+    </div>
+
+    <div class="rpg-panel pc-guide-card">
+      <b style="color:#fde047;">조작 안내 (PC 1920×1080)</b><br>
+      • <b>이동:</b> 방향키 / WASD / 맵 클릭<br>
+      • <b>조사·대화:</b> Space / Enter / 대상 클릭<br>
+      • <b>충돌 디버그:</b> F2 | <b>창 닫기:</b> ESC
+    </div>
+  </aside>
 </div>
 
 <!-- 모바일/PC 보조 조작패드 -->

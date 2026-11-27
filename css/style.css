@@ -405,3 +405,43 @@ canvas#radarCanvas {
 }
 .d-btn:active { background: #334155; border-color: var(--gold); }
 .help-text { font-size: 11.5px; color: #94a3b8; line-height: 1.5; }
+
+.pc-side-panel { display: none; }
+
+@media (min-width: 900px) and (orientation: landscape) {
+  body { overflow: hidden; background: #050811; }
+  #game-shell {
+    width: 100vw; max-width: none; height: 100vh; max-height: none;
+    aspect-ratio: auto; border: none; border-radius: 0; box-shadow: none;
+    display: flex; flex-direction: row; background: #070b14;
+  }
+  #pc-viewport { position: relative; flex: 1; height: 100%; overflow: hidden; background: #060913; }
+  canvas#gameCanvas { width: 100%; height: 100%; object-fit: cover; }
+  #pc-viewport > .hud-top { display: none; }
+  .pc-side-panel {
+    display: flex; flex-direction: column; justify-content: space-between;
+    width: 380px; flex-shrink: 0; height: 100%; padding: 16px;
+    background: linear-gradient(180deg, #0d1528 0%, #070c18 100%);
+    border-left: 3px solid var(--gold); box-shadow: -8px 0 28px rgba(0,0,0,0.75);
+    z-index: 20; gap: 12px; overflow-y: auto;
+  }
+  .pc-brand-box { padding: 12px 14px; text-align: center; }
+  .pc-brand-title { font-size: 20px; color: var(--gold-bright); text-shadow: 0 2px 6px rgba(0,0,0,0.9); margin-bottom: 4px; }
+  .pc-brand-sub { font-size: 11.5px; color: #93c5fd; }
+  .pc-status-card { padding: 12px 14px; }
+  .pc-status-card .balls-row { justify-content: space-between; margin-top: 8px; }
+  .pc-status-card .ball-slot { width: 34px; height: 34px; }
+  .pc-status-card .ball-num { font-size: 12px; }
+  .pc-status-card .quest-goal { white-space: normal; line-height: 1.45; margin-top: 6px; }
+  .pc-menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pc-menu-btn {
+    background: linear-gradient(180deg, #1e3a5f 0%, #0f1f38 100%);
+    border: 1.5px solid var(--gold); color: var(--gold-bright); border-radius: 5px;
+    padding: 10px 8px; font-size: 13px; cursor: pointer; transition: filter 0.12s, transform 0.1s;
+  }
+  .pc-menu-btn:hover { filter: brightness(1.2); transform: translateY(-1px); }
+  .pc-guide-card { padding: 11px 13px; font-size: 12px; line-height: 1.6; color: #cbd5e1; }
+  #dialogue-wrap { left: 24px; right: 24px; bottom: 20px; max-width: 920px; margin: 0 auto; }
+  .modal-card { max-width: 640px; }
+  .controls-footer { display: none; }
+}

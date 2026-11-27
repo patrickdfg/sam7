@@ -616,6 +616,21 @@ function updateHUD() {
   if (state.party.zhangfei) pHtml += '<span class="party-pill">장비</span>';
   if (state.party.zhuge)    pHtml += '<span class="party-pill">제갈량</span>';
   pStrip.innerHTML = pHtml;
+  const pcStage = document.getElementById('pc-hud-stage');
+  if (pcStage) {
+    pcStage.innerText = st.name;
+    document.getElementById('pc-hud-stats').innerText = `Lv.${state.lv} | 💰${state.gold}G`;
+    document.getElementById('pc-hud-goal').innerText = document.getElementById('hud-goal').innerText;
+    const pcBalls = document.getElementById('pc-hud-balls');
+    pcBalls.innerHTML = '';
+    state.balls.forEach((has, i) => {
+      const slot = document.createElement('div');
+      slot.className = 'ball-slot' + (has ? ' active' : '');
+      slot.innerHTML = `<img src="${ASSET_PATHS.item_dragonball}" onerror="this.src='assets/item_dragonball.png'"><span class="ball-num">${i+1}</span>`;
+      pcBalls.appendChild(slot);
+    });
+    document.getElementById('pc-hud-party').innerHTML = pHtml;
+  }
 }
 
 function closeModals() {
@@ -1118,6 +1133,15 @@ function continueAfterEnding() {
 // =========================================================================
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+function isPcWideMode() {
+  return window.innerWidth >= 900 && window.innerWidth > window.innerHeight;
+}
+function syncResolution() {
+  if (isPcWideMode()) { canvas.width = 1920; canvas.height = 1080; }
+  else { canvas.width = 540; canvas.height = 720; }
+}
+syncResolution();
+window.addEventListener('resize', syncResolution);
 const keys = {};
 let touchDir = { x: 0, y: 0 }, stepTick = 0;
 
