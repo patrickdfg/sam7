@@ -1352,7 +1352,7 @@ function update() {
 
   if (dx !== 0 || dy !== 0) {
     isMoving = true;
-    walkPhase += 0.28;
+    walkPhase += 0.16;
     if (Math.abs(dx) >= Math.abs(dy)) {
       state.dir = dx < 0 ? 'left' : 'right';
       state.facing = dx < 0 ? -1 : 1;
@@ -1360,7 +1360,7 @@ function update() {
       state.dir = dy < 0 ? 'up' : 'down';
     }
 
-    const sp = 4.4;
+    const sp = 2.5;
     const tryX = Math.max(36, Math.min(504, state.x + dx * sp));
     const tryY = Math.max(32, Math.min(688, state.y + dy * sp));
 
@@ -1372,7 +1372,7 @@ function update() {
     if (moved) {
       trail.unshift({ x: state.x, y: state.y, facing: state.facing, dir: state.dir || 'down' });
       if (trail.length > 64) trail.pop();
-      if (++stepTick % 14 === 0) Sound.sfx('step');
+      if (++stepTick % 25 === 0) Sound.sfx('step');
     }
 
     for (const p of STAGES[state.stage].portals) {
