@@ -18,3 +18,6 @@
 ## 📁 assets/ 폴더 전체 이미지 26종 (.jpg 또는 .png 자동 인식)
 - **이전 18종:** `map_village`, `map_forest`, `map_palace`, `ending_shenron`, `shop_banner`, `portrait_liubei`, `portrait_guanyu`, `portrait_zhangfei`, `portrait_merchant`, `portrait_boss`, `sprite_liubei`, `sprite_guanyu`, `sprite_zhangfei`, `sprite_npc`, `sprite_merchant`, `sprite_enemy`, `sprite_lubu`, `item_dragonball`
 - **v4.0 신규 8종:** `map_chibi`, `map_hulao`, `battle_bg_forest`, `battle_bg_fortress`, `battle_bg_palace`, `portrait_zhuge`, `sprite_zhuge`, `og_banner`
+
+## ✅ 올인원 패키지 안내
+`assets/` 폴더에 26종의 모든 이미지(배경·초상화·투명 배경 누끼 처리된 스프라이트)가 포함되어 있어 압축 해제 후 `index.html` 실행 또는 GitHub Pages 업로드만으로 즉시 플레이할 수 있습니다.

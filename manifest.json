@@ -9,9 +9,9 @@
   "theme_color": "#e5b84b",
   "icons": [
     {
-      "src": "assets/item_dragonball.jpg",
+      "src": "assets/item_dragonball.png",
       "sizes": "512x512",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

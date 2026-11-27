@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>삼국지: 칠성용옥전 — 2.5D HD 도트 RPG (v4.0 Ultimate)</title>
+  <title>삼국지: 칠성용옥전 — 2.5D HD 도트 RPG (v4.1 Ultimate)</title>
   <meta name="description" content="유비·관우·장비·제갈량과 함께 5개 지역에 흩어진 7개의 칠성용옥을 모아 황금 신룡을 소환하는 2.5D 도트 RPG">
   <meta name="theme-color" content="#e5b84b">
 
@@ -16,8 +16,8 @@
 
   <!-- PWA 매니페스트 & 용옥 파비콘 -->
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/jpeg" href="assets/item_dragonball.jpg">
-  <link rel="apple-touch-icon" href="assets/item_dragonball.jpg">
+  <link rel="icon" type="image/png" href="assets/item_dragonball.png">
+  <link rel="apple-touch-icon" href="assets/item_dragonball.png">
 
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -32,7 +32,7 @@
   <div id="preloader">
     <div class="loader-title">삼국지: 칠성용옥전</div>
     <div class="loader-track"><div class="loader-fill" id="loader-fill"></div></div>
-    <div class="loader-sub" id="loader-sub">전설의 두루마리를 펼치는 중... (0 / 26)</div>
+    <div class="loader-sub" id="loader-sub">전설의 두루마리를 펼치는 중... (0 / 34)</div>
   </div>
 
   <!-- 스테이지 암전 & 배너 -->
@@ -53,14 +53,14 @@
   <!-- 타이틀 화면 -->
   <div id="title-screen">
     <img class="title-bg-art" src="assets/og_banner.jpg" onerror="this.style.display='none'" alt="">
-    <div class="title-badge">2.5D HD PIXEL RPG • ULTIMATE v4.0</div>
+    <div class="title-badge">2.5D HD PIXEL RPG • ULTIMATE v4.1 • 4-DIR</div>
     <h1 class="game-title">삼국지: 칠성용옥전</h1>
     <p class="game-sub">탁군에서 낙양 황궁까지 5대 전장을 누비며<br>7개의 용옥을 모아 황금 신룡을 소환하라!</p>
     <button class="menu-btn" onclick="startNewGame()">⚔️ 새로운 여정 시작</button>
     <button class="menu-btn" id="btn-continue" onclick="openSaveModal('load')" style="display:none;">📜 이어하기 (3슬롯)</button>
     <button class="menu-btn" onclick="openAchievements()">🏆 업적 &amp; 엔딩 도감</button>
     <button class="menu-btn" onclick="openSettings()">⚙️ 환경설정</button>
-    <div class="version-tag">v4.0 Ultimate • 5 Chapters • PWA App • Pixel Font</div>
+    <div class="version-tag">v4.1 Ultimate • 5 Chapters • PWA App • Pixel Font</div>
   </div>
 
   <!-- 상단 HUD -->
