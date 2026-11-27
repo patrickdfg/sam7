@@ -452,6 +452,118 @@ const STAGES = {
   }
 };
 
+
+// 외전의 각 지역은 수호자와 두 개의 용 조각을 지니고 있습니다.
+const DRAGON_SHARDS = [
+  ['snow_crystal', '설산 얼음 조각', '설산'],
+  ['snow_chest', '설산 동굴 조각', '설산'],
+  ['bamboo_chest', '대숲 석등 조각', '대나무 숲'],
+  ['bamboo_crate', '대숲 상자 조각', '대나무 숲'],
+  ['shrine_crystal', '용의 제단 조각', '숨겨진 용묘'],
+  ['shrine_chest', '용묘 유물 조각', '숨겨진 용묘']
+];
+function shardCount() {
+  return DRAGON_SHARDS.filter(([id]) => state.loot[id]).length;
+}
+function collectDragonShard(id, name) {
+  collectHiddenLoot(id, '🐉 용의 조각 발견', () => {
+    state.bag.c_herb = (state.bag.c_herb || 0) + 1;
+  }, `[${name}]과 회복 탕약 1개를 발견했다! 용의 조각 ${shardCount()}/6. 대나무 숲 장인에게 가져가자.`);
+}
+function dragonSmith() {
+  const count = shardCount();
+  if (state.ownedEquip.includes('ac_dragon')) {
+    showDialogue('대숲 장인', 'portrait_merchant', '용의 조각으로 만든 신룡의 수호패가 군단을 지켜 줄 것이오.');
+  } else if (count < DRAGON_SHARDS.length) {
+    showDialogue('대숲 장인', 'portrait_merchant', `설산과 대숲, 용묘에서 용의 조각 여섯 개를 찾아오시오. 지금은 ${count}/6개를 모았소.`);
+  } else {
+    state.ownedEquip.push('ac_dragon');
+    state.equip.acc = 'ac_dragon';
+    saveProgress();
+    showDialogue('대숲 장인', 'portrait_merchant', '여섯 조각으로 [신룡의 수호패]를 만들었소! 유비에게 장착했소. 공격 +24, 방어 +18!');
+  }
+}
+function dragonBoss(flag, name, hp, atk, def, exp, gold, rewardItem, rewardText) {
+  startBattle({ name, hp, atk, def, exp, gold, ballIdx: null, flag,
+    spriteKey: 'sprite_lubu', isBoss: true, rewardItem, rewardText,
+    chargeMsg: name + '이 강력한 일격을 준비한다. 철벽 방어로 버티자!' });
+}
+STAGES.palace.portals.push({
+  x: 350, y: 450, to: 'snow', tx: 270, ty: 635, label: '▲ 외전 · 설산으로',
+  requiresFlag: 'endingDone', lockedText: '황궁 제단에서 신룡의 소원을 이룬 뒤 설산으로 갈 수 있다.'
+});
+STAGES.snow = {
+  name: '외전 제1장: 설산의 봉인', sub: 'SIDE STORY I • SNOW PASS',
+  mapKey: 'map_snow', battleBg: 'battle_bg_forest', bgm: 'forest', particle: 'dust',
+  portals: [
+    { x: 270, y: 680, to: 'palace', tx: 350, ty: 505, label: '▼ 낙양 황궁으로' },
+    { x: 270, y: 40, to: 'bamboo', tx: 270, ty: 635, label: '▲ 대나무 숲으로',
+      requiresFlag: 'snowBoss', lockedText: '설산 수호자를 쓰러뜨려 봉인을 풀어야 한다.' }
+  ],
+  entities: [
+    { id:'snow_guide', x:260, y:575, sprite:'sprite_npc', name:'설산 길잡이',
+      onTalk:()=>showDialogue('설산 길잡이','portrait_liubei','신룡의 소원 뒤 설산 봉인이 흔들리고 있소. 앞의 수호자를 쓰러뜨리고 용의 인장을 모아 주시오. 주변의 빛나는 용의 조각도 잊지 마시오.') },
+    { id:'snow_guard', x:215, y:430, sprite:'sprite_enemy', name:'설산 파수병', hideIfFlag:'snowGuard',
+      onTalk:()=>startBattle({name:'설산 파수병',hp:240,atk:31,def:9,exp:150,gold:160,ballIdx:null,flag:'snowGuard',spriteKey:'sprite_enemy',isBoss:false}) },
+    { id:'snow_boss', x:195, y:200, sprite:'sprite_lubu', name:'설산 수호자', hideIfFlag:'snowBoss',
+      onTalk:()=>dragonBoss('snowBoss','설산 수호자',420,38,13,260,300,'w_frost','설산의 인장과 설산 수호검을 얻었다! 가방에서 장착할 수 있다. 북쪽 대나무 숲으로 향하자.') },
+    { id:'snow_crystal', x:180, y:390, sprite:null, hidden:true, name:'얼음 결정', hideIfLoot:'snow_crystal',
+      onTalk:()=>collectDragonShard('snow_crystal','설산 얼음 조각') },
+    { id:'snow_chest', x:225, y:300, sprite:null, hidden:true, name:'바위 틈 상자', hideIfLoot:'snow_chest',
+      onTalk:()=>collectDragonShard('snow_chest','설산 동굴 조각') }
+  ]
+};
+STAGES.bamboo = {
+  name: '외전 제2장: 대숲의 수호자', sub: 'SIDE STORY II • BAMBOO FOREST',
+  mapKey: 'map_bamboo', battleBg: 'battle_bg_forest', bgm: 'forest', particle: 'petal',
+  portals: [
+    { x:270,y:680,to:'snow',tx:270,ty:95,label:'▼ 설산으로' },
+    { x:270,y:40,to:'dragon',tx:270,ty:635,label:'▲ 숨겨진 용묘로',
+      requiresFlag:'bambooBoss',lockedText:'대숲 수호자를 이겨 두 번째 인장을 얻어야 한다.' }
+  ],
+  entities: [
+    { id:'bamboo_smith',x:250,y:550,sprite:'sprite_merchant',name:'대숲 장인',onTalk:dragonSmith },
+    { id:'bamboo_guard',x:290,y:420,sprite:'sprite_enemy',name:'흑풍단 무사',hideIfFlag:'bambooGuard',
+      onTalk:()=>startBattle({name:'흑풍단 무사',hp:300,atk:36,def:12,exp:190,gold:200,ballIdx:null,flag:'bambooGuard',spriteKey:'sprite_enemy',isBoss:false}) },
+    { id:'bamboo_boss',x:225,y:205,sprite:'sprite_lubu',name:'대숲 수호자',hideIfFlag:'bambooBoss',
+      onTalk:()=>dragonBoss('bambooBoss','대숲 수호자',510,43,16,330,380,'a_bamboo','대숲의 인장과 청죽 비늘갑옷을 얻었다! 가방에서 장착하고 북쪽 용묘로 가자.') },
+    { id:'bamboo_chest',x:180,y:365,sprite:null,hidden:true,name:'대숲 석등',hideIfLoot:'bamboo_chest',
+      onTalk:()=>collectDragonShard('bamboo_chest','대숲 석등 조각') },
+    { id:'bamboo_crate',x:255,y:300,sprite:null,hidden:true,name:'낡은 상자',hideIfLoot:'bamboo_crate',
+      onTalk:()=>collectDragonShard('bamboo_crate','대숲 상자 조각') }
+  ]
+};
+STAGES.dragon = {
+  name: '외전 제3장: 숨겨진 용묘', sub: 'SIDE STORY III • DRAGON SHRINE',
+  mapKey: 'map_dragon', battleBg: 'battle_bg_palace', bgm: 'boss', particle: 'ember',
+  portals: [{x:270,y:680,to:'bamboo',tx:270,ty:95,label:'▼ 대나무 숲으로'}],
+  entities: [
+    { id:'dragon_guide',x:235,y:615,sprite:'sprite_npc',name:'용묘 수호 노인',
+      onTalk:()=>showDialogue('수호 노인','portrait_liubei','세 봉인을 지키는 용묘의 주인이 기다리고 있소. 마지막 시련을 넘으면 외전의 이야기가 완성될 것이오.') },
+    { id:'dragon_guard',x:350,y:425,sprite:'sprite_enemy',name:'용묘 호위병',hideIfFlag:'dragonGuard',
+      onTalk:()=>startBattle({name:'용묘 호위병',hp:370,atk:42,def:15,exp:240,gold:250,ballIdx:null,flag:'dragonGuard',spriteKey:'sprite_enemy',isBoss:false}) },
+    { id:'dragon_boss',x:270,y:205,sprite:'sprite_lubu',name:'용묘의 주인',hideIfFlag:'dragonBoss',
+      onTalk:()=>dragonBoss('dragonBoss','용묘의 주인',650,48,18,500,600,null,'마지막 용의 인장을 얻었다! 세 봉인이 안정되고 영웅들의 외전이 완성되었다.') },
+    { id:'shrine_crystal',x:175,y:350,sprite:null,hidden:true,name:'용의 제단',hideIfLoot:'shrine_crystal',
+      onTalk:()=>collectDragonShard('shrine_crystal','용의 제단 조각') },
+    { id:'shrine_chest',x:365,y:285,sprite:null,hidden:true,name:'용묘 유물함',hideIfLoot:'shrine_chest',
+      onTalk:()=>collectDragonShard('shrine_chest','용묘 유물 조각') }
+  ]
+};
+// 설산과 대숲의 굽은 길에 맞춰 이동 가능한 경계를 설정합니다.
+const STORY_PATHS = {
+  snow: [[0,270,48],[100,255,48],[160,180,48],[220,195,48],[280,190,48],[320,250,48],[370,165,48],[415,165,48],[475,285,50],[520,270,50],[580,260,48],[720,270,48]],
+  bamboo: [[0,260,52],[100,260,52],[180,210,50],[240,210,50],[300,245,55],[360,260,100],[420,290,90],[480,310,60],[540,250,55],[600,265,55],[720,270,55]]
+};
+STAGE_COLLIDERS.snow = [];
+STAGE_COLLIDERS.bamboo = [];
+STAGE_COLLIDERS.dragon = [
+  {x:0,y:0,w:70,h:720}, {x:470,y:0,w:70,h:720},
+  {x:70,y:50,w:400,h:105},
+  {x:70,y:480,w:140,h:130}, {x:330,y:480,w:140,h:130},
+  {x:225,y:265,w:90,h:65}
+];
+
 // =========================================================================
 // 4. STAGE TRANSITION, DRAGON RADAR & MULTI-SLOT SAVE UI
 // =========================================================================
@@ -541,7 +653,9 @@ function openRadar() {
   const otherStage = BALL_QUESTS.filter((q, i) => !state.balls[i] && q.stage !== state.stage);
 
   if (state.balls.every(Boolean)) {
-    info.innerHTML = '🐉 <b>모든 칠성용옥(7/7)을 수집했습니다!</b><br>제5막 낙양 황궁 중앙의 [황금 신룡 제단]으로 이동하세요.';
+    info.innerHTML = state.flags.endingDone
+      ? `🐉 용의 조각 ${shardCount()}/6. 외전 지역마다 조각이 두 개씩 숨어 있습니다. 임무 일지에서 목록을 확인하세요.`
+      : '🐉 <b>모든 칠성용옥(7/7)을 수집했습니다!</b><br>제5막 낙양 황궁 중앙의 [황금 신룡 제단]으로 이동하세요.';
   } else {
     let html = `<b>현재 지역(${STAGES[state.stage].name}) 미획득 용옥:</b> ${inStage.length}개<br>`;
     html += inStage.length > 0
@@ -629,6 +743,12 @@ function updateHUD() {
   document.getElementById('hud-goal').innerText = count === 7
     ? '🐉 칠성용옥 7개 완성! 제5막 황궁 제단에서 신룡 소환!'
     : `용옥(${count}/7) — ${BALL_QUESTS.find((_,i)=>!state.balls[i]).hint}`;
+  if (state.flags.endingDone) {
+    const next = !state.flags.snowBoss ? '황궁 설산 입구에서 첫 번째 봉인을 찾아라'
+      : !state.flags.bambooBoss ? '대나무 숲 수호자를 찾아라'
+      : !state.flags.dragonBoss ? '숨겨진 용묘의 주인을 찾아라' : '외전 완료! 대숲 장인에게 용의 조각을 가져가라';
+    document.getElementById('hud-goal').innerText = `외전 · ${next} (조각 ${shardCount()}/6)`;
+  }
 
   const row = document.getElementById('hud-balls');
   row.innerHTML = '';
@@ -779,6 +899,29 @@ function openQuestLog(tab='main') {
         </div>`;
       list.appendChild(div);
     });
+    if (state.flags.endingDone) {
+      const tasks = [
+        ['snowBoss', '설산의 봉인', '설산 수호자를 처치하고 수호검을 얻으세요.'],
+        ['bambooBoss', '대숲의 수호자', '대숲 수호자를 처치하고 갑옷을 얻으세요.'],
+        ['dragonBoss', '숨겨진 용묘', '용묘의 주인을 쓰러뜨리고 마지막 봉인을 지키세요.']
+      ];
+      tasks.forEach(([flag, title, description]) => {
+        const div = document.createElement('div');
+        div.className = 'item-row';
+        div.innerHTML = `<div class="item-info"><div class="item-name">${state.flags[flag] ? '✅' : '⚔️'} ${title}</div><div class="item-desc">${description}</div></div>`;
+        list.appendChild(div);
+      });
+      const summary = document.createElement('div');
+      summary.className = 'item-row';
+      summary.innerHTML = `<div class="item-info"><div class="item-name">🐉 용의 조각 ${shardCount()}/6</div><div class="item-desc">각 외전 지역에서 2개씩 발견할 수 있습니다. 모두 모으면 대숲 장인이 수호패를 만듭니다.</div></div>`;
+      list.appendChild(summary);
+      DRAGON_SHARDS.forEach(([id, title, loc]) => {
+        const div = document.createElement('div');
+        div.className = 'item-row';
+        div.innerHTML = `<div class="item-info"><div class="item-name">${state.loot[id] ? '✅' : '▫️'} ${title}</div><div class="item-desc">${loc}</div></div>`;
+        list.appendChild(div);
+      });
+    }
   } else {
     SUB_QUESTS_DB.forEach(sq => {
       const st = state.subQuests[sq.id] || 0;
@@ -1062,6 +1205,7 @@ function executeBattleResolution(cmd) {
 
   if (b.hp <= 0) {
     if (b.flag) state.flags[b.flag] = true;
+    if (b.rewardItem && !state.ownedEquip.includes(b.rewardItem)) state.ownedEquip.push(b.rewardItem);
     if (b.isFinal) unlockAchievement('lubu_slayer');
     state.gold += b.gold;
     gainExp(b.exp);
@@ -1075,7 +1219,7 @@ function executeBattleResolution(cmd) {
       giveBall(b.ballIdx, '유비', 'portrait_liubei', msg);
     } else {
       saveProgress();
-      showDialogue('유비', 'portrait_liubei', `${b.name}를 제압했다! ${rewardTxt}`);
+      showDialogue('유비', 'portrait_liubei', b.rewardText ? `${b.rewardText} ${rewardTxt}` : `${b.name}를 제압했다! ${rewardTxt}`);
     }
     activeBattle = null;
     return;
@@ -1171,6 +1315,9 @@ function chooseWish(type) {
 function continueAfterEnding() {
   document.getElementById('ending-screen').style.display = 'none';
   Sound.playBGM(STAGES[state.stage].bgm);
+  if (state.flags.endingDone && !state.flags.snowBoss) {
+    showDialogue('제갈량', 'portrait_zhuge', '황궁 설산 입구의 봉인이 흔들리고 있습니다. 수호자들을 만나 새로운 여정을 시작합시다.');
+  }
 }
 
 // =========================================================================
@@ -1326,6 +1473,16 @@ function interact() {
 }
 
 function hitsCollider(nx, ny) {
+  const path = STORY_PATHS[state.stage];
+  if (path) {
+    const index = path.findIndex(row => row[0] >= ny);
+    const next = path[Math.max(1, index < 0 ? path.length - 1 : index)];
+    const prev = path[Math.max(1, index < 0 ? path.length - 1 : index) - 1];
+    const ratio = Math.max(0, Math.min(1, (ny - prev[0]) / (next[0] - prev[0])));
+    const center = prev[1] + (next[1] - prev[1]) * ratio;
+    const halfWidth = prev[2] + (next[2] - prev[2]) * ratio;
+    if (nx < center - halfWidth || nx > center + halfWidth) return true;
+  }
   const cols = STAGE_COLLIDERS[state.stage] || [];
   const r = 14;
   return cols.some(c => nx + r > c.x && nx - r < c.x + c.w && ny + r > c.y && ny - r < c.y + c.h);
@@ -1377,6 +1534,11 @@ function update() {
 
     for (const p of STAGES[state.stage].portals) {
       if (Math.hypot(p.x - state.x, p.y - state.y) < 38) {
+        if (p.requiresFlag && !state.flags[p.requiresFlag]) {
+          releaseMovement();
+          showDialogue('유비', 'portrait_liubei', p.lockedText);
+          break;
+        }
         changeStage(p.to, p.tx, p.ty);
         break;
       }

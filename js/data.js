@@ -8,6 +8,9 @@ const ASSET_PATHS = {
   map_chibi:   'assets/map_chibi.jpg',
   map_hulao:   'assets/map_hulao.jpg',
   map_palace:  'assets/map_palace.jpg',
+  map_snow: 'assets/map_snow.jpg',
+  map_bamboo: 'assets/map_bamboo.jpg',
+  map_dragon: 'assets/map_dragon.jpg',
 
   // 전투 전용 16비트 배경 & 컷신 & 배너
   battle_bg_forest:   'assets/battle_bg_forest.jpg',
@@ -49,6 +52,9 @@ const ASSET_PATHS = {
 // SHOP & EQUIPMENT CATALOG
 // =========================================================================
 const ITEMS_DB = {
+  w_frost: { id: 'w_frost', type: 'weapon', name: '설산 수호검', atk: 56, def: 8, crit: 18, price: 0, desc: '설산 수호자에게 얻은 검 (공격 +56, 방어 +8)' },
+  a_bamboo: { id: 'a_bamboo', type: 'armor', name: '청죽 비늘갑옷', atk: 8, def: 34, crit: 8, price: 0, desc: '대나무 숲의 수호 갑옷 (방어 +34, 공격 +8)' },
+  ac_dragon: { id: 'ac_dragon', type: 'acc', name: '신룡의 수호패', atk: 24, def: 18, crit: 16, price: 0, desc: '용의 조각 여섯 개로 만든 수호패 (공 +24, 방 +18)' },
   w_twin:    { id: 'w_twin',    type: 'weapon', name: '자웅일대검 (기본)', atk: 8,  def: 0,  crit: 5,  price: 0,   desc: '유비의 기본 쌍검 (공격 +8)' },
   w_iron:    { id: 'w_iron',    type: 'weapon', name: '청강검',           atk: 18, def: 0,  crit: 10, price: 120, desc: '강철을 베는 명검 (공격 +18, 치명 +10%)' },
   w_seven:   { id: 'w_seven',   type: 'weapon', name: '칠성보검',         atk: 30, def: 4,  crit: 18, price: 280, desc: '칠성 보석이 박힌 보검 (공격 +30, 방어 +4, 치명 +18%)' },
