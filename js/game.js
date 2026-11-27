@@ -1133,15 +1133,46 @@ function continueAfterEnding() {
 // =========================================================================
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-function isPcWideMode() {
-  return window.innerWidth >= 900 && window.innerWidth > window.innerHeight;
-}
+const WORLD_WIDTH = 540, WORLD_HEIGHT = 720;
+const pcLayout = window.matchMedia('(min-width: 900px) and (orientation: landscape)');
+const fieldView = { left: 0, top: 0, width: WORLD_WIDTH, height: WORLD_HEIGHT };
+
 function syncResolution() {
-  if (isPcWideMode()) { canvas.width = 1920; canvas.height = 1080; }
-  else { canvas.width = 540; canvas.height = 720; }
+  const wide = pcLayout.matches;
+  const width = wide ? 1920 : WORLD_WIDTH;
+  const height = wide ? 1080 : WORLD_HEIGHT;
+  if (canvas.width !== width) canvas.width = width;
+  if (canvas.height !== height) canvas.height = height;
+  fieldView.width = WORLD_WIDTH;
+  fieldView.height = WORLD_HEIGHT;
+  if (wide) {
+    const rect = canvas.getBoundingClientRect();
+    const zoom = Math.max(rect.width / WORLD_WIDTH, rect.height / WORLD_HEIGHT);
+    if (zoom > 0) {
+      fieldView.width = rect.width / zoom;
+      fieldView.height = rect.height / zoom;
+    }
+  }
+  positionFieldCamera();
 }
+
+function positionFieldCamera() {
+  // 유비를 중심에 두되 카메라가 지도 경계를 넘어가지는 않도록 합니다.
+  fieldView.left = Math.max(0, Math.min(WORLD_WIDTH - fieldView.width, state.x - fieldView.width / 2));
+  fieldView.top = Math.max(0, Math.min(WORLD_HEIGHT - fieldView.height, state.y - fieldView.height / 2));
+}
+
+function pointerToWorld(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: fieldView.left + (event.clientX - rect.left) * fieldView.width / rect.width,
+    y: fieldView.top + (event.clientY - rect.top) * fieldView.height / rect.height
+  };
+}
+
 syncResolution();
-window.addEventListener('resize', syncResolution);
+new ResizeObserver(syncResolution).observe(canvas);
+pcLayout.addEventListener('change', syncResolution);
 const keys = {};
 let touchDir = { x: 0, y: 0 }, stepTick = 0;
 
@@ -1155,16 +1186,14 @@ function startMove(x, y) { moveTarget = null; touchDir = { x, y }; }
 function stopMove() { touchDir = { x: 0, y: 0 }; }
 
 canvas.addEventListener('pointermove', (e) => {
-  const rect = canvas.getBoundingClientRect();
-  mouseCanvasPos.x = Math.round((e.clientX - rect.left) * (canvas.width / rect.width));
-  mouseCanvasPos.y = Math.round((e.clientY - rect.top)  * (canvas.height / rect.height));
+  const pos = pointerToWorld(e);
+  mouseCanvasPos.x = Math.round(pos.x);
+  mouseCanvasPos.y = Math.round(pos.y);
 });
 
 canvas.addEventListener('pointerdown', (e) => {
   if (isOverlayOpen() || document.getElementById('dialogue-wrap').style.display === 'flex' || isTransitioning) return;
-  const rect = canvas.getBoundingClientRect();
-  const cx = (e.clientX - rect.left) * (canvas.width / rect.width);
-  const cy = (e.clientY - rect.top)  * (canvas.height / rect.height);
+  const { x: cx, y: cy } = pointerToWorld(e);
   if (debugMode) {
     console.log(`[DEBUG] Stage=${state.stage} Click=(${Math.round(cx)}, ${Math.round(cy)})`);
     showToast(`📍 좌표 (${Math.round(cx)}, ${Math.round(cy)}) 콘솔 기록됨`);
@@ -1334,11 +1363,28 @@ function drawParticles(type) {
   });
 }
 
+function drawMapFullBleed(map) {
+  if (!map) {
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    return;
+  }
+  if (!pcLayout.matches) {
+    ctx.drawImage(map, 0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    return;
+  }
+  const scale = Math.max(WORLD_WIDTH / map.width, WORLD_HEIGHT / map.height);
+  const w = map.width * scale, h = map.height * scale;
+  ctx.drawImage(map, (WORLD_WIDTH - w) / 2, (WORLD_HEIGHT - h) / 2, w, h);
+}
+
 function render() {
   update();
+  positionFieldCamera();
+  const sx = canvas.width / fieldView.width, sy = canvas.height / fieldView.height;
+  ctx.setTransform(sx, 0, 0, sy, -fieldView.left * sx, -fieldView.top * sy);
   const st = STAGES[state.stage];
-  if (ASSETS[st.mapKey]) ctx.drawImage(ASSETS[st.mapKey], 0, 0, canvas.width, canvas.height);
-  else { ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+  drawMapFullBleed(ASSETS[st.mapKey]);
 
   if (moveTarget) {
     ctx.strokeStyle = 'rgba(253,224,71,0.85)'; ctx.lineWidth = 2;

@@ -416,7 +416,6 @@ canvas#radarCanvas {
     display: flex; flex-direction: row; background: #070b14;
   }
   #pc-viewport { position: relative; flex: 1; height: 100%; overflow: hidden; background: #060913; }
-  canvas#gameCanvas { width: 100%; height: 100%; object-fit: cover; }
   #pc-viewport > .hud-top { display: none; }
   .pc-side-panel {
     display: flex; flex-direction: column; justify-content: space-between;
