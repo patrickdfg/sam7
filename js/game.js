@@ -155,6 +155,7 @@ function loadFromSlot(slotNum) {
 function deleteSlot(slotNum) {
   if (confirm(`세이브 슬롯 ${slotNum}의 기록을 삭제할까요?`)) {
     localStorage.removeItem(SLOT_PREFIX + slotNum);
+    document.getElementById('btn-continue').style.display = hasAnySave() ? 'inline-block' : 'none';
     openSaveModal(currentSaveMode);
   }
 }
@@ -442,7 +443,7 @@ let isTransitioning = false;
 function changeStage(toStage, tx, ty) {
   if (isTransitioning) return;
   isTransitioning = true;
-  moveTarget = null;
+  syncFieldAccess();
   Sound.sfx('portal');
   const fade = document.getElementById('stage-fade');
   fade.style.opacity = '1';
@@ -454,7 +455,7 @@ function changeStage(toStage, tx, ty) {
     saveProgress();
     fade.style.opacity = '0';
     showStageBanner(STAGES[toStage].sub, STAGES[toStage].name);
-    setTimeout(() => isTransitioning = false, 360);
+    setTimeout(() => { isTransitioning = false; syncFieldAccess(); }, 360);
   }, 340);
 }
 
@@ -469,7 +470,8 @@ function showStageBanner(sub, main) {
 let currentSaveMode = 'manage';
 function openSaveModal(mode='manage') {
   currentSaveMode = mode;
-  document.getElementById('save-modal-title').innerText = mode === 'load' ? '📜 이어하기 (세이브 슬롯 선택)' : '💾 3슬롯 저장 / 불러오기';
+  const titles = { load: '📜 이어하기 (세이브 슬롯 선택)', manage: '💾 3슬롯 저장 / 불러오기', new: '⚔️ 새 여정을 시작할 슬롯 선택' };
+  document.getElementById('save-modal-title').innerText = titles[mode];
   const list = document.getElementById('save-slots-list');
   list.innerHTML = '';
   [1, 2, 3].forEach(n => {
@@ -500,6 +502,14 @@ function openSaveModal(mode='manage') {
         </div>
         ${mode !== 'load' ? `<button class="btn-small" onclick="saveToSlot(${n});showToast('슬롯 ${n}에 저장 완료!');openSaveModal('manage')">여기에 저장</button>` : '<span style="font-size:11px;color:#64748b;">빈 슬롯</span>'}
       `;
+    }
+    if (mode === 'new') {
+      const actions = div.querySelector('.item-info').nextElementSibling;
+      const start = document.createElement('button');
+      start.className = 'btn-small';
+      start.textContent = '여기에서 시작';
+      start.onclick = () => startNewGame(n);
+      actions.replaceWith(start);
     }
     list.appendChild(div);
   });
@@ -569,10 +579,13 @@ function openRadar() {
 // =========================================================================
 // 5. START, HUD, SHOP, INVENTORY, QUEST LOG (MAIN+SUB), SETTINGS & DEBUG
 // =========================================================================
-function startNewGame() {
+function startNewGame(slot = [1, 2, 3].find(n => !localStorage.getItem(SLOT_PREFIX + n))) {
+  if (!slot) { openSaveModal('new'); return; }
+  if (localStorage.getItem(SLOT_PREFIX + slot) && !confirm(`슬롯 ${slot}의 기존 기록을 덮어쓰고 새 여정을 시작할까요?`)) return;
+  closeModals();
   Sound.init();
   state = JSON.parse(JSON.stringify(DEFAULT_STATE));
-  activeSlot = 1;
+  activeSlot = slot;
   trail.length = 0; moveTarget = null;
   document.getElementById('title-screen').style.display = 'none';
   Sound.playBGM(STAGES[state.stage].bgm);
@@ -588,7 +601,7 @@ function giveBall(idx, speaker, portrait, msg) {
   Sound.sfx('dragonball');
   saveProgress();
   showDialogue(speaker, portrait, msg, () => {
-    if (state.balls.every(Boolean)) triggerEnding();
+    if (state.balls.every(Boolean)) showToast('🐉 용옥을 모두 모았습니다. 황궁 중앙 제단을 조사하세요.');
   });
 }
 
@@ -820,9 +833,10 @@ function toggleDebugMode() {
 // =========================================================================
 // 6. DIALOGUE, QUIZ, 16-BIT BATTLE STAGE (SPRITE LUNGE + CUT-IN) & ENDING
 // =========================================================================
-let typingTimer = null, afterDialogueCb = null;
+let typingTimer = null, afterDialogueCb = null, dialogueText = '';
 function showDialogue(speaker, portraitKey, text, cb=null) {
   afterDialogueCb = cb;
+  dialogueText = text;
   moveTarget = null;
   document.getElementById('dlg-speaker').innerText = speaker;
   document.getElementById('dlg-portrait').src = ASSET_PATHS[portraitKey] || ASSET_PATHS.portrait_liubei;
@@ -834,11 +848,16 @@ function showDialogue(speaker, portraitKey, text, cb=null) {
   typingTimer = setInterval(() => {
     el.innerText += text[i++];
     if (i % 3 === 0) Sound.sfx('talk');
-    if (i >= text.length) clearInterval(typingTimer);
+    if (i >= text.length) { clearInterval(typingTimer); typingTimer = null; }
   }, 18);
 }
 function closeDialogue() {
-  clearInterval(typingTimer);
+  if (typingTimer !== null) {
+    clearInterval(typingTimer);
+    typingTimer = null;
+    document.getElementById('dlg-text').innerText = dialogueText;
+    return;
+  }
   document.getElementById('dialogue-wrap').style.display = 'none';
   if (afterDialogueCb) { const fn = afterDialogueCb; afterDialogueCb = null; fn(); }
 }
@@ -938,30 +957,37 @@ function refreshBattleUI() {
   if (state.party.zhuge) stHtml += `<span class="status-pill" style="background:#1e3a5f;border-color:#60a5fa;color:#bfdbfe;">🪶 제갈량 지략 (매턴 MP+6)</span>`;
   stEl.innerHTML = stHtml;
 
+  const skill = currentBattleSkill();
   const skillBtn = document.getElementById('btn-b-skill');
-  if (state.party.guanyu && state.party.zhangfei && state.party.zhuge) skillBtn.innerText = '🐉 천하삼분지계 합공 (MP 20)';
-  else if (state.party.guanyu && state.party.zhangfei) skillBtn.innerText = '🐉 도원결의 삼위일체 (MP 18)';
-  else if (state.party.guanyu)   skillBtn.innerText = '🔥 청룡언월도 합공 (MP 15)';
-  else if (state.party.zhangfei) skillBtn.innerText = '⚡ 장팔사모 포효 (MP 15)';
-  else                           skillBtn.innerText = '🔥 쌍고검 일섬 (MP 12)';
+  skillBtn.innerText = `${skill.title} (MP ${skill.cost})`;
+  skillBtn.disabled = state.mp < skill.cost;
+  for (const [key, item, label] of [['herb','c_herb','🍵 탕약'], ['thunder','c_thunder','⚡ 천둥부적']]) {
+    const button = document.getElementById('btn-b-' + key);
+    const count = state.bag[item] || 0;
+    button.innerText = `${label} (${count})`;
+    button.disabled = count === 0;
+  }
+}
 
-  document.getElementById('btn-b-herb').innerText = `🍵 탕약 (${state.bag.c_herb||0})`;
-  document.getElementById('btn-b-thunder').innerText = `⚡ 천둥부적 (${state.bag.c_thunder||0})`;
+function currentBattleSkill() {
+  const { guanyu, zhangfei, zhuge } = state.party;
+  if (guanyu && zhangfei && zhuge) return { title: '🐉 촉한사걸 천하삼분지계', cost: 20, mult: 2.95 };
+  if (guanyu && zhangfei) return { title: '🐉 도원결의 삼위일체', cost: 18, mult: 2.5 };
+  if (guanyu) return { title: '🔥 청룡언월도 합공', cost: 15, mult: 1.9 };
+  if (zhangfei) return { title: '⚡ 장팔사모 포효', cost: 15, mult: 1.9 };
+  if (zhuge) return { title: '🪶 제갈량 지략 합공', cost: 12, mult: 1.5 };
+  return { title: '🔥 쌍고검 일섬', cost: 12, mult: 1.5 };
 }
 
 function battleTurn(cmd) {
   if (!activeBattle || battleBusy) return;
   if (cmd === 'skill') {
-    const cost = (state.party.guanyu && state.party.zhangfei && state.party.zhuge) ? 20
-      : (state.party.guanyu && state.party.zhangfei) ? 18 : (state.party.guanyu || state.party.zhangfei ? 15 : 12);
-    if (state.mp < cost) { showToast('기력(MP)이 부족합니다!'); return; }
-    state.mp -= cost;
+    const skill = currentBattleSkill();
+    if (state.mp < skill.cost) { showToast('기력(MP)이 부족합니다!'); return; }
+    state.mp -= skill.cost;
     if (state.party.guanyu || state.party.zhangfei || state.party.zhuge) {
       battleBusy = true;
-      const title = (state.party.guanyu && state.party.zhangfei && state.party.zhuge) ? '🐉 촉한사걸 천하삼분지계!!'
-        : (state.party.guanyu && state.party.zhangfei) ? '🐉 도원결의 삼위일체!!'
-        : (state.party.guanyu ? '🔥 청룡언월도 합공!!' : '⚡ 장팔사모 포효!!');
-      playCutIn(title, () => { battleBusy = false; executeBattleResolution('skill'); });
+      playCutIn(skill.title + '!!', () => { battleBusy = false; executeBattleResolution('skill'); });
       return;
     }
   }
@@ -970,7 +996,6 @@ function battleTurn(cmd) {
 
 function executeBattleResolution(cmd) {
   const b = activeBattle, s = getStats();
-  b.turn++;
   let guard = false, log = '';
 
   if (cmd === 'attack') {
@@ -985,9 +1010,7 @@ function executeBattleResolution(cmd) {
     log = isCrit ? `💥 회심의 일격! ${b.name}에게 ${dmg} 치명 피해!` : `🗡️ 쌍고검 공격! ${b.name}에게 ${dmg} 피해!`;
   } else if (cmd === 'skill') {
     triggerLunge('b-player-sprite', 'lunge-right');
-    const mult = (state.party.guanyu && state.party.zhangfei && state.party.zhuge) ? 2.95
-      : (state.party.guanyu && state.party.zhangfei) ? 2.5
-      : (state.party.guanyu || state.party.zhangfei ? 1.9 : 1.5);
+    const mult = currentBattleSkill().mult;
     const dmg = Math.floor((s.atk * mult) - b.def * 0.4 + Math.random()*16);
     b.hp = Math.max(0, b.hp - dmg);
     Sound.sfx('skill');
@@ -1017,6 +1040,7 @@ function executeBattleResolution(cmd) {
     log = `🛡️ 철벽 방어 태세! 피해 경감 & MP +14!`;
   }
 
+  b.turn++;
   const card = document.getElementById('battle-card');
   card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
 
@@ -1095,31 +1119,36 @@ function executeBattleResolution(cmd) {
   refreshBattleUI();
 }
 
-function triggerEnding() {
-  state.flags.endingDone = true;
-  saveProgress();
-  Sound.sfx('shenron');
-  Sound.playBGM('ending');
-  document.getElementById('ending-img').src = ASSET_PATHS.ending_shenron;
-  document.getElementById('ending-title').innerText = '🐉 칠성용옥 완성 — 황금 신룡 강림!';
-  document.getElementById('ending-text').innerText = '7개의 용옥이 눈부신 빛을 내며 하늘로 솟구쳤다! 천둥과 함께 강림한 황금 신룡이 외친다.\n"그대의 소원을 말하라. 단 하나의 소원을 이루어 주겠다!"';
-  document.getElementById('wish-btns').style.display = 'flex';
-  document.getElementById('ending-after-btns').style.display = 'none';
-  document.getElementById('ending-screen').style.display = 'flex';
-}
-
-function chooseWish(type) {
-  Sound.sfx('dragonball');
-  const texts = {
+const wishTexts = {
     peace: '【진 엔딩: 천하태평】\n황금 신룡의 축복이 온 중원에 퍼지며 전란이 영원히 종식되었다. 유비·관우·장비·제갈량의 이름은 천년을 이어 빛났다!',
     power: '【무쌍 엔딩: 천하제일】\n신룡의 기운이 군단에 깃들어 범접할 수 없는 무쌍의 힘을 얻었다! (공격력 +50 영구 증가)',
     wealth: '【부호 엔딩: 만석군】\n황금 비가 쏟아지며 백성들의 창고가 가득 찼다! 군자금으로 9999 금화가 채워졌다!'
   };
+
+function triggerEnding() {
+  const done = Boolean(state.flags.endingWish);
+  Sound.sfx('shenron');
+  Sound.playBGM('ending');
+  document.getElementById('ending-img').src = ASSET_PATHS.ending_shenron;
+  document.getElementById('ending-title').innerText = '🐉 황금 신룡 강림!';
+  document.getElementById('ending-text').innerText = done
+    ? wishTexts[state.flags.endingWish]
+    : '7개의 용옥이 눈부신 빛을 내며 하늘로 솟구쳤다! 황금 신룡이 묻는다.\n"그대의 소원은 무엇인가?"';
+  document.getElementById('wish-btns').style.display = done ? 'none' : 'flex';
+  document.getElementById('ending-after-btns').style.display = done ? 'flex' : 'none';
+  document.getElementById('ending-screen').style.display = 'flex';
+}
+
+function chooseWish(type) {
+  if (state.flags.endingWish || !Object.hasOwn(wishTexts, type)) return;
+  Sound.sfx('dragonball');
+  state.flags.endingDone = true;
+  state.flags.endingWish = type;
   unlockAchievement('end_' + type);
   if (type === 'power') state.baseAtk += 50;
   if (type === 'wealth') state.gold += 9999;
   saveProgress();
-  document.getElementById('ending-text').innerText = texts[type];
+  document.getElementById('ending-text').innerText = wishTexts[type];
   document.getElementById('wish-btns').style.display = 'none';
   document.getElementById('ending-after-btns').style.display = 'flex';
 }
@@ -1203,23 +1232,56 @@ canvas.addEventListener('pointerdown', (e) => {
   moveTarget = { x: cx, y: cy };
 });
 
-window.addEventListener('keydown', e => {
-  if (e.key === 'F2') { e.preventDefault(); toggleDebugMode(); return; }
-  if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','w','a','s','d','W','A','S','D'].includes(e.key)) moveTarget = null;
-  keys[e.key] = true;
-  if (e.key === ' ' || e.key === 'Enter') {
-    e.preventDefault();
-    if (document.getElementById('dialogue-wrap').style.display === 'flex') closeDialogue();
-    else interact();
-  }
-  if (e.key === 'Escape') closeModals();
-});
-window.addEventListener('keyup', e => keys[e.key] = false);
+const titleScreen = document.getElementById('title-screen');
+const dialogueBox = document.getElementById('dialogue-wrap');
+const sceneOverlays = [...document.querySelectorAll('.modal-overlay, #ending-screen')];
+const fieldControls = document.querySelectorAll('.pc-menu-grid, .hud-actions, .controls-footer');
 
 function isOverlayOpen() {
-  return ['title-screen','battle-modal','shop-modal','inv-modal','quest-modal','quiz-modal','radar-modal','ach-modal','settings-modal','save-modal','ending-screen']
-    .some(id => document.getElementById(id).style.display === 'flex');
+  return titleScreen.style.display !== 'none' || sceneOverlays.some(el => el.style.display === 'flex');
 }
+
+function releaseMovement() {
+  for (const key of Object.keys(keys)) delete keys[key];
+  stopMove();
+  moveTarget = null;
+}
+
+function syncFieldAccess() {
+  const blocked = isOverlayOpen() || dialogueBox.style.display === 'flex' || isTransitioning;
+  fieldControls.forEach(el => { el.inert = blocked; });
+  titleScreen.inert = sceneOverlays.some(el => el.style.display === 'flex');
+  if (blocked) releaseMovement();
+}
+
+const sceneObserver = new MutationObserver(syncFieldAccess);
+[titleScreen, dialogueBox, ...sceneOverlays].forEach(el => {
+  sceneObserver.observe(el, { attributes: true, attributeFilter: ['style'] });
+});
+syncFieldAccess();
+window.addEventListener('blur', releaseMovement);
+document.addEventListener('visibilitychange', () => { if (document.hidden) releaseMovement(); });
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'F2') { e.preventDefault(); if (!e.repeat) toggleDebugMode(); return; }
+  if (e.key === 'Escape') { closeModals(); return; }
+  if (isOverlayOpen() || isTransitioning) return;
+  const action = e.key === ' ' || e.key === 'Enter';
+  if (dialogueBox.style.display === 'flex') {
+    if (action) { e.preventDefault(); if (!e.repeat) closeDialogue(); }
+    return;
+  }
+  if (action) {
+    if (e.target.closest?.('button, input, select, textarea')) return;
+    e.preventDefault();
+    if (!e.repeat) interact();
+  } else if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','w','a','s','d','W','A','S','D'].includes(e.key)) {
+    e.preventDefault();
+    moveTarget = null;
+    keys[e.key] = true;
+  }
+});
+window.addEventListener('keyup', e => { delete keys[e.key]; });
 
 function isEntityVisible(e) {
   if (e.hideIfBall !== undefined && state.balls[e.hideIfBall]) return false;
@@ -1287,10 +1349,10 @@ function update() {
     const tryY = Math.max(32, Math.min(688, state.y + dy * sp));
 
     let moved = false;
-    if (!hitsCollider(tryX, state.y)) { state.x = tryX; moved = true; }
-    if (!hitsCollider(state.x, tryY)) { state.y = tryY; moved = true; }
+    if (tryX !== state.x && !hitsCollider(tryX, state.y)) { state.x = tryX; moved = true; }
+    if (tryY !== state.y && !hitsCollider(state.x, tryY)) { state.y = tryY; moved = true; }
 
-    if (!moved && moveTarget) moveTarget = null;
+    if (!moved) { moveTarget = null; isMoving = false; }
     if (moved) {
       trail.unshift({ x: state.x, y: state.y, facing: state.facing, dir: state.dir || 'down' });
       if (trail.length > 64) trail.pop();
@@ -1309,10 +1371,10 @@ function update() {
 }
 
 function getDirectionalSprite(baseKey, dir) {
-  if (dir === 'up')    return { key: baseKey + '_back', facing: 1 };
-  if (dir === 'right') return { key: baseKey + '_side', facing: 1 };
-  if (dir === 'left')  return { key: baseKey + '_side', facing: -1 };
-  return { key: baseKey, facing: 1 };
+  let key = baseKey;
+  if (dir === 'up') key += '_back';
+  if (dir === 'left' || dir === 'right') key += '_side';
+  return { key: ASSETS[key] ? key : baseKey, facing: dir === 'left' ? -1 : 1 };
 }
 
 function drawSprite(imgKey, x, y, size, label, opts={}) {
@@ -1464,5 +1526,6 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+updateHUD();
 preloadAssets();
 render();

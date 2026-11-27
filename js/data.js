@@ -34,14 +34,14 @@ const ASSET_PATHS = {
   sprite_merchant: 'assets/sprite_merchant.png',
   sprite_enemy:    'assets/sprite_enemy.png',
   sprite_lubu:     'assets/sprite_lubu.png',
-  sprite_liubei_back:   'assets/sprite_liubei_back.png',
-  sprite_liubei_side:   'assets/sprite_liubei_side.png',
-  sprite_guanyu_back:   'assets/sprite_guanyu_back.png',
-  sprite_guanyu_side:   'assets/sprite_guanyu_side.png',
-  sprite_zhangfei_back: 'assets/sprite_zhangfei_back.png',
-  sprite_zhangfei_side: 'assets/sprite_zhangfei_side.png',
-  sprite_zhuge_back:    'assets/sprite_zhuge_back.png',
-  sprite_zhuge_side:    'assets/sprite_zhuge_side.png',
+  sprite_liubei_back:   'assets/sprite_liubei_back.png?v=field2',
+  sprite_liubei_side:   'assets/sprite_liubei_side.png?v=field2',
+  sprite_guanyu_back:   'assets/sprite_guanyu_back.png?v=field2',
+  sprite_guanyu_side:   'assets/sprite_guanyu_side.png?v=field2',
+  sprite_zhangfei_back: 'assets/sprite_zhangfei_back.png?v=field2',
+  sprite_zhangfei_side: 'assets/sprite_zhangfei_side.png?v=field2',
+  sprite_zhuge_back:    'assets/sprite_zhuge_back.png?v=field2',
+  sprite_zhuge_side:    'assets/sprite_zhuge_side.png?v=field2',
   item_dragonball: 'assets/item_dragonball.png'
 };
 
