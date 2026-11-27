@@ -140,6 +140,22 @@ function loadFromSlot(slotNum) {
   state = Object.assign(JSON.parse(JSON.stringify(DEFAULT_STATE)), parsed);
   state.subQuests = Object.assign({ sq_herb: 0, sq_compass: 0, sq_supply: 0 }, parsed.subQuests || {});
   state.party = Object.assign({ guanyu: false, zhangfei: false, zhuge: false }, parsed.party || {});
+  // 이전 저장 위치가 새 성벽 안이면 가장 가까운 이동 가능한 지점으로 옮깁니다.
+  if (state.stage === 'hulao' && hitsCollider(state.x, state.y)) {
+    let nearest = null;
+    for (let y = 35; y <= 685; y += 5) {
+      for (let x = 40; x <= 500; x += 5) {
+        const distance = Math.hypot(x - state.x, y - state.y);
+        if ((!nearest || distance < nearest.distance) && !hitsCollider(x, y)) nearest = { x, y, distance };
+      }
+    }
+    if (nearest) {
+      state.x = nearest.x; state.y = nearest.y;
+      if (Math.hypot(state.x - 280, state.y - 455) < 45) {
+        state.x = 280; state.y = 505;
+      }
+    }
+  }
   trail.length = 0;
   moveTarget = null;
   closeModals();
@@ -377,14 +393,14 @@ const STAGES = {
     mapKey: 'map_hulao', battleBg: 'battle_bg_fortress', bgm: 'hulao', particle: 'ember',
     portals: [
       { x: 270, y: 680, to: 'chibi',  tx: 210, ty: 95,  label: '▼ 제3막 적벽 나루터로' },
-      { x: 270, y: 40,  to: 'palace', tx: 270, ty: 635, label: '▲ 제5막 낙양 황궁으로' }
+      { x: 280, y: 455, to: 'palace', tx: 270, ty: 635, label: '▲ 성문 통과 · 낙양 황궁으로' }
     ],
     entities: [
       { id: 'hulao_merchant', x: 125, y: 520, sprite: 'sprite_merchant', name: '전선 보급 상인', onTalk: () => openShop() },
-      { id: 'hulao_guard', x: 270, y: 445, sprite: 'sprite_enemy', name: '호로관 선봉대', hideIfFlag: 'hulaoGuard',
+      { id: 'hulao_guard', x: 200, y: 510, sprite: 'sprite_enemy', name: '호로관 선봉대', hideIfFlag: 'hulaoGuard',
         onTalk: () => startBattle({ name: '호로관 정예 선봉대', hp: 165, atk: 24, def: 8, exp: 95, gold: 150, ballIdx: null, flag: 'hulaoGuard', spriteKey: 'sprite_enemy', isBoss: false })
       },
-      { id: 'huaxiong_boss', x: 270, y: 245, sprite: 'sprite_enemy', name: '보스: 맹장 화웅', hideIfFlag: 'huaxiongBoss',
+      { id: 'huaxiong_boss', x: 350, y: 510, sprite: 'sprite_enemy', name: '보스: 맹장 화웅', hideIfFlag: 'huaxiongBoss',
         onTalk: () => startBattle({ name: '호로관 맹장 화웅', hp: 260, atk: 31, def: 11, exp: 170, gold: 280, ballIdx: 4, flag: 'huaxiongBoss', spriteKey: 'sprite_enemy', isBoss: true, chargeMsg: '화웅이 대도를 치켜들고 맹렬한 참격을 준비한다! (철벽 방어 필수!)' })
       },
       { id: 'sq_supply_spot', x: 405, y: 475, sprite: null, hidden: true, name: '군량미 보급 상자 (의뢰)', hideIfSubDone: 'sq_supply',
@@ -404,7 +420,7 @@ const STAGES = {
   palace: {
     name: '제5막: 낙양 황궁 용옥 제단', sub: 'CHAPTER V • IMPERIAL DRAGON ALTAR',
     mapKey: 'map_palace', battleBg: 'battle_bg_palace', bgm: 'palace', particle: 'ember',
-    portals: [{ x: 270, y: 680, to: 'hulao', tx: 270, ty: 95, label: '▼ 제4막 호로관으로' }],
+    portals: [{ x: 270, y: 680, to: 'hulao', tx: 280, ty: 505, label: '▼ 제4막 호로관으로' }],
     entities: [
       { id: 'palace_stone', x: 145, y: 365, sprite: 'item_dragonball', name: '황궁 비밀 비석', hideIfBall: 5,
         onTalk: () => {
@@ -1380,7 +1396,7 @@ function getDirectionalSprite(baseKey, dir) {
 function drawSprite(imgKey, x, y, size, label, opts={}) {
   const img = ASSETS[imgKey];
   const { facing=1, walking=false, highlight=false, promptIcon=null } = opts;
-  const bob = walking ? Math.abs(Math.sin(walkPhase)) * -5.5 : Math.sin(Date.now() / 240 + x) * 1.8;
+  const bob = walking ? Math.abs(Math.sin(walkPhase)) * -3 : Math.sin(Date.now() / 240 + x) * 1.8;
   const tilt = walking ? Math.sin(walkPhase) * 0.075 : 0;
 
   if (img) {
@@ -1403,7 +1419,7 @@ function drawSprite(imgKey, x, y, size, label, opts={}) {
     ctx.fillText(label, x, y - size/2 - 5);
   }
   if (promptIcon) {
-    const py = y - size/2 - 26 + Math.sin(Date.now() / 160) * 3;
+    const py = y - size/2 - 18 + Math.sin(Date.now() / 160) * 3;
     ctx.fillStyle = 'rgba(15,23,42,0.94)';
     ctx.beginPath(); ctx.arc(x, py, 13, 0, Math.PI*2); ctx.fill();
     ctx.strokeStyle = '#fde047'; ctx.lineWidth = 2; ctx.stroke();
@@ -1464,7 +1480,7 @@ function render() {
   const lbDir = getDirectionalSprite('sprite_liubei', state.dir || 'down');
   const drawList = [{
     y: state.y,
-    fn: () => drawSprite(lbDir.key, state.x, state.y, 76, '유비', { facing: lbDir.facing, walking: isMoving })
+    fn: () => drawSprite(lbDir.key, state.x, state.y, 44, '유비', { facing: lbDir.facing, walking: isMoving })
   }];
 
   // 유비 -> 관우 -> 장비 -> 제갈량 4인 스네이크 포메이션 (4방향 동기화)
@@ -1473,7 +1489,7 @@ function render() {
     if (state.party[k]) {
       const pt = trail[Math.min(trail.length - 1, fIdx)] || { x: state.x - 36, y: state.y + 10, dir: state.dir || 'down' };
       const fDir = getDirectionalSprite(spr, pt.dir || 'down');
-      drawList.push({ y: pt.y, fn: () => drawSprite(fDir.key, pt.x, pt.y, 74, nm, { facing: fDir.facing, walking: isMoving }) });
+      drawList.push({ y: pt.y, fn: () => drawSprite(fDir.key, pt.x, pt.y, 44, nm, { facing: fDir.facing, walking: isMoving }) });
       fIdx += 14;
     }
   });
@@ -1493,7 +1509,7 @@ function render() {
       });
     } else {
       const isOrb = e.sprite === 'item_dragonball';
-      const sz = isOrb ? 48 : (e.sprite === 'sprite_lubu' ? 88 : 74);
+      const sz = isOrb ? 32 : (e.sprite === 'sprite_lubu' ? 52 : 44);
       const pIcon = isNear ? (isOrb ? '🔍' : '!') : null;
       drawList.push({ y: e.y, fn: () => drawSprite(e.sprite, e.x, e.y, sz, e.name, { highlight: isOrb, promptIcon: pIcon }) });
     }
