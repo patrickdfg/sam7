@@ -26,15 +26,23 @@ const ASSET_PATHS = {
   portrait_boss:     'assets/portrait_boss.jpg',
 
   // 필드 & 전투 도트 스프라이트 (9종)
-  sprite_liubei:   'assets/sprite_liubei.jpg',
-  sprite_guanyu:   'assets/sprite_guanyu.jpg',
-  sprite_zhangfei: 'assets/sprite_zhangfei.jpg',
-  sprite_zhuge:    'assets/sprite_zhuge.jpg',
-  sprite_npc:      'assets/sprite_npc.jpg',
-  sprite_merchant: 'assets/sprite_merchant.jpg',
-  sprite_enemy:    'assets/sprite_enemy.jpg',
-  sprite_lubu:     'assets/sprite_lubu.jpg',
-  item_dragonball: 'assets/item_dragonball.jpg'
+  sprite_liubei:   'assets/sprite_liubei.png',
+  sprite_guanyu:   'assets/sprite_guanyu.png',
+  sprite_zhangfei: 'assets/sprite_zhangfei.png',
+  sprite_zhuge:    'assets/sprite_zhuge.png',
+  sprite_npc:      'assets/sprite_npc.png',
+  sprite_merchant: 'assets/sprite_merchant.png',
+  sprite_enemy:    'assets/sprite_enemy.png',
+  sprite_lubu:     'assets/sprite_lubu.png',
+  sprite_liubei_back:   'assets/sprite_liubei_back.png',
+  sprite_liubei_side:   'assets/sprite_liubei_side.png',
+  sprite_guanyu_back:   'assets/sprite_guanyu_back.png',
+  sprite_guanyu_side:   'assets/sprite_guanyu_side.png',
+  sprite_zhangfei_back: 'assets/sprite_zhangfei_back.png',
+  sprite_zhangfei_side: 'assets/sprite_zhangfei_side.png',
+  sprite_zhuge_back:    'assets/sprite_zhuge_back.png',
+  sprite_zhuge_side:    'assets/sprite_zhuge_side.png',
+  item_dragonball: 'assets/item_dragonball.png'
 };
 
 // =========================================================================

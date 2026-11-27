@@ -79,7 +79,7 @@ function preloadAssets() {
 // =========================================================================
 const DEFAULT_STATE = {
   stage: 'village',
-  x: 270, y: 545, facing: 1,
+  x: 270, y: 545, facing: 1, dir: 'down',
   lv: 1, exp: 0, nextExp: 60,
   hp: 135, maxHp: 135,
   mp: 55,  maxMp: 55,
@@ -1222,8 +1222,12 @@ function update() {
   if (dx !== 0 || dy !== 0) {
     isMoving = true;
     walkPhase += 0.28;
-    if (dx < -0.1) state.facing = -1;
-    if (dx >  0.1) state.facing = 1;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      state.dir = dx < 0 ? 'left' : 'right';
+      state.facing = dx < 0 ? -1 : 1;
+    } else {
+      state.dir = dy < 0 ? 'up' : 'down';
+    }
 
     const sp = 4.4;
     const tryX = Math.max(36, Math.min(504, state.x + dx * sp));
@@ -1235,7 +1239,7 @@ function update() {
 
     if (!moved && moveTarget) moveTarget = null;
     if (moved) {
-      trail.unshift({ x: state.x, y: state.y, facing: state.facing });
+      trail.unshift({ x: state.x, y: state.y, facing: state.facing, dir: state.dir || 'down' });
       if (trail.length > 64) trail.pop();
       if (++stepTick % 14 === 0) Sound.sfx('step');
     }
@@ -1249,6 +1253,13 @@ function update() {
   } else {
     isMoving = false;
   }
+}
+
+function getDirectionalSprite(baseKey, dir) {
+  if (dir === 'up')    return { key: baseKey + '_back', facing: 1 };
+  if (dir === 'right') return { key: baseKey + '_side', facing: 1 };
+  if (dir === 'left')  return { key: baseKey + '_side', facing: -1 };
+  return { key: baseKey, facing: 1 };
 }
 
 function drawSprite(imgKey, x, y, size, label, opts={}) {
@@ -1318,17 +1329,19 @@ function render() {
   });
 
   const nearEntity = getNearestEntity(state.x, state.y, 82);
+  const lbDir = getDirectionalSprite('sprite_liubei', state.dir || 'down');
   const drawList = [{
     y: state.y,
-    fn: () => drawSprite('sprite_liubei', state.x, state.y, 76, '유비', { facing: state.facing, walking: isMoving })
+    fn: () => drawSprite(lbDir.key, state.x, state.y, 76, '유비', { facing: lbDir.facing, walking: isMoving })
   }];
 
-  // 유비 -> 관우 -> 장비 -> 제갈량 4인 스네이크 포메이션
+  // 유비 -> 관우 -> 장비 -> 제갈량 4인 스네이크 포메이션 (4방향 동기화)
   let fIdx = 14;
   [['guanyu','sprite_guanyu','관우'], ['zhangfei','sprite_zhangfei','장비'], ['zhuge','sprite_zhuge','제갈량']].forEach(([k, spr, nm]) => {
     if (state.party[k]) {
-      const pt = trail[Math.min(trail.length - 1, fIdx)] || { x: state.x - 36, y: state.y + 10, facing: state.facing };
-      drawList.push({ y: pt.y, fn: () => drawSprite(spr, pt.x, pt.y, 74, nm, { facing: pt.facing, walking: isMoving }) });
+      const pt = trail[Math.min(trail.length - 1, fIdx)] || { x: state.x - 36, y: state.y + 10, dir: state.dir || 'down' };
+      const fDir = getDirectionalSprite(spr, pt.dir || 'down');
+      drawList.push({ y: pt.y, fn: () => drawSprite(fDir.key, pt.x, pt.y, 74, nm, { facing: fDir.facing, walking: isMoving }) });
       fIdx += 14;
     }
   });
